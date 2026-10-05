@@ -1,0 +1,376 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>電影感扭蛋機</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0e0e11; --panel:#17171c; --panel2:#1f1f26; --line:#2c2c35;
+  --text:#f2efe9; --muted:#9a97a3;
+  --shot:#4f9dff; --move:#f5a623; --light:#ff5d73;
+  --radius:18px;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{
+  background:var(--bg); color:var(--text);
+  font-family:"Noto Sans TC",system-ui,sans-serif; line-height:1.5;
+  min-height:100vh;
+}
+.bar{height:28px;background:#000}
+.wrap{max-width:1100px;margin:0 auto;padding:28px 16px 48px}
+header{text-align:center;margin-bottom:24px}
+.eyebrow{font-family:"Bebas Neue",sans-serif;letter-spacing:.25em;color:var(--muted);font-size:15px}
+h1{margin:4px 0 6px;font-size:clamp(30px,6vw,52px);font-weight:900;letter-spacing:.04em}
+.sub{color:var(--muted);margin:0;font-size:15px}
+
+/* topic */
+.topic{
+  display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:center;
+  background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+  padding:14px 16px;margin-bottom:20px;
+}
+.topic label{font-weight:700}
+.topic input{
+  flex:1 1 220px;min-width:0;background:var(--panel2);border:1px solid var(--line);color:var(--text);
+  border-radius:12px;padding:10px 14px;font:inherit;font-size:16px;
+}
+.topic input:focus{outline:2px solid #fff3;border-color:#fff5}
+
+button{font:inherit;cursor:pointer;border:none;color:inherit}
+.btn{
+  background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:10px 14px;
+  font-weight:700;font-size:15px;transition:transform .1s, background .2s;
+}
+.btn:hover{background:#2a2a33}
+.btn:active{transform:scale(.97)}
+.btn.primary{
+  background:linear-gradient(135deg,#ffd166,#ff8a3d);color:#1a1205;border:none;
+  font-size:clamp(18px,3vw,22px);padding:16px 34px;border-radius:999px;
+  box-shadow:0 8px 30px #ff8a3d44;
+}
+.btn.primary:hover{filter:brightness(1.07)}
+
+/* slots */
+.slots{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+@media (max-width:760px){.slots{grid-template-columns:1fr}}
+.slot{
+  position:relative;background:var(--panel);border:1px solid var(--line);
+  border-radius:var(--radius);padding:18px 18px 16px;min-height:240px;
+  display:flex;flex-direction:column;overflow:hidden;
+}
+.slot::before{content:"";position:absolute;inset:0 0 auto 0;height:5px;background:var(--c)}
+.slot[data-k=shot]{--c:var(--shot)} .slot[data-k=move]{--c:var(--move)} .slot[data-k=light]{--c:var(--light)}
+.slot-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.tag{font-weight:900;color:var(--c);letter-spacing:.1em}
+.tag small{font-family:"Bebas Neue";letter-spacing:.15em;color:var(--muted);margin-left:6px;font-weight:400;font-size:14px}
+.lock{
+  font-size:13px;padding:5px 10px;border-radius:999px;background:var(--panel2);border:1px solid var(--line);color:var(--muted)
+}
+.lock[aria-pressed=true]{background:var(--c);color:#111;border-color:var(--c);font-weight:700}
+.face{flex:1;display:flex;flex-direction:column;justify-content:center;text-align:center;gap:6px}
+.zh{font-size:clamp(32px,5vw,44px);font-weight:900;line-height:1.15}
+.en{font-family:"Bebas Neue",sans-serif;font-size:22px;letter-spacing:.08em;color:var(--c)}
+.mood{color:var(--muted);font-size:14px;min-height:42px}
+.slot.spinning .face{filter:blur(1.2px);opacity:.75}
+.slot.landed{animation:pop .45s ease}
+@keyframes pop{0%{transform:scale(.96)}60%{transform:scale(1.03)}100%{transform:scale(1)}}
+.left{font-size:12px;color:var(--muted);text-align:center;margin-top:6px}
+
+.actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:22px 0}
+
+/* prompt */
+.prompt{
+  background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:18px;
+}
+.prompt h2,.section h2{margin:0 0 10px;font-size:18px}
+.prompt-zh{font-size:17px;margin-bottom:10px}
+.prompt-zh b{padding:1px 6px;border-radius:6px;color:#111}
+.prompt-en{
+  background:#0a0a0d;border:1px solid var(--line);border-radius:12px;padding:12px 14px;
+  font-family:ui-monospace,Menlo,Consolas,monospace;font-size:14px;word-break:break-word;color:#e9e4d8
+}
+.prompt-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;align-items:center}
+.check{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:14px;cursor:pointer}
+.toast{color:#7ee2a8;font-size:14px;opacity:0;transition:opacity .2s}
+.toast.show{opacity:1}
+
+/* history & deck */
+.section{margin-top:28px}
+.history{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.history li{
+  background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 14px;font-size:14px;
+  display:flex;gap:8px;flex-wrap:wrap;align-items:center
+}
+.history .n{color:var(--muted);font-family:"Bebas Neue";font-size:16px;margin-right:4px}
+.chip{padding:2px 8px;border-radius:999px;font-weight:700;font-size:13px;color:#111}
+.chip.shot{background:var(--shot)} .chip.move{background:var(--move)} .chip.light{background:var(--light)}
+.empty{color:var(--muted);font-size:14px}
+
+details.deck{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:14px 18px}
+details.deck summary{cursor:pointer;font-weight:700;font-size:16px}
+.deck-group{margin-top:16px}
+.deck-group h3{margin:0 0 8px;font-size:15px}
+.mini-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.mini{background:var(--panel2);border-radius:12px;padding:10px;border-top:3px solid var(--c)}
+.mini b{display:block}
+.mini span{font-family:"Bebas Neue";color:var(--c);letter-spacing:.06em}
+.mini p{margin:4px 0 0;color:var(--muted);font-size:12px}
+.mini.used{opacity:.35}
+
+footer{text-align:center;color:var(--muted);font-size:13px;margin-top:32px}
+kbd{background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:1px 6px;font-size:12px}
+</style>
+</head>
+<body>
+<div class="bar"></div>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">CINEMATIC GACHA · 電影感寫實片</div>
+    <h1>電影感扭蛋機</h1>
+    <p class="sub">抽一張景別、一張運鏡、一張光線，組成你的電影鏡頭</p>
+  </header>
+
+  <div class="topic">
+    <label for="topic">今天拍什麼：</label>
+    <input id="topic" type="text" placeholder="例如：便利商店店員在深夜補貨">
+    <button class="btn" id="randTopic" type="button">隨機主題</button>
+  </div>
+
+  <div class="slots" id="slots"></div>
+
+  <div class="actions">
+    <button class="btn primary" id="draw" type="button">轉動扭蛋！</button>
+  </div>
+
+  <div class="prompt">
+    <h2>你的鏡頭</h2>
+    <div class="prompt-zh" id="promptZh">按下「轉動扭蛋」開始抽卡</div>
+    <div class="prompt-en" id="promptEn">—</div>
+    <div class="prompt-row">
+      <button class="btn" id="copy" type="button">複製英文提示詞</button>
+      <label class="check"><input type="checkbox" id="style" checked> 加上電影質感尾綴</label>
+      <label class="check"><input type="checkbox" id="noRepeat" checked> 抽過的卡不重複</label>
+      <button class="btn" id="reset" type="button">重新洗牌</button>
+      <span class="toast" id="toast">已複製！</span>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>抽卡紀錄</h2>
+    <ul class="history" id="history"><li class="empty">還沒有紀錄</li></ul>
+  </div>
+
+  <div class="section">
+    <details class="deck">
+      <summary>查看全部卡片（24 張）</summary>
+      <div id="deckView"></div>
+    </details>
+  </div>
+
+  <footer>快捷鍵：<kbd>空白鍵</kbd> 轉動扭蛋　·　<kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> 鎖定／解鎖卡片</footer>
+</div>
+<div class="bar"></div>
+
+<script>
+const DECKS = {
+  shot: { label:"景別", en:"SHOT SIZE", cards:[
+    {zh:"大遠景", en:"extreme wide shot", mood:"人很小、世界很大，孤單或壯闊"},
+    {zh:"遠景", en:"wide shot", mood:"交代環境，讓觀眾知道「這是哪裡」"},
+    {zh:"全景", en:"full shot", mood:"看見完整的人和動作"},
+    {zh:"中景", en:"medium shot", mood:"腰部以上，像在旁邊看著他"},
+    {zh:"近景", en:"medium close-up", mood:"胸口以上，開始感覺到情緒"},
+    {zh:"特寫", en:"close-up", mood:"整張臉塞滿畫面，情緒放大"},
+    {zh:"大特寫", en:"extreme close-up", mood:"只拍眼睛、手指、嘴角，製造緊張"},
+    {zh:"主觀鏡頭", en:"POV shot", mood:"觀眾變成主角，用他的眼睛看"}
+  ]},
+  move: { label:"運鏡", en:"CAMERA MOVE", cards:[
+    {zh:"推鏡", en:"slow dolly in", mood:"慢慢靠近，越來越在意"},
+    {zh:"拉鏡", en:"slow dolly out", mood:"慢慢遠離，揭露真相或留下孤單"},
+    {zh:"橫搖", en:"slow pan", mood:"像轉頭在看，帶出環境"},
+    {zh:"跟拍", en:"tracking shot following the subject", mood:"跟著主角移動，有陪伴感和速度感"},
+    {zh:"環繞", en:"orbit shot circling the subject", mood:"繞著主角轉，主角像主角"},
+    {zh:"升降", en:"crane shot rising up", mood:"往上升起，故事結束或命運降臨"},
+    {zh:"手持晃動", en:"handheld shaky camera", mood:"真實、慌亂、紀錄片感"},
+    {zh:"空拍", en:"drone flyover", mood:"從天上俯瞰，史詩級開場"}
+  ]},
+  light: { label:"光線", en:"LIGHTING", cards:[
+    {zh:"黃金時刻", en:"golden hour sunlight", mood:"溫暖、懷舊、青春"},
+    {zh:"藍調時刻", en:"blue hour twilight", mood:"安靜、憂鬱、剛下班的城市"},
+    {zh:"逆光剪影", en:"backlit silhouette", mood:"看不清臉，神祕又有詩意"},
+    {zh:"輪廓光", en:"rim light", mood:"主角邊緣發光，從背景跳出來"},
+    {zh:"低調光", en:"low-key lighting, deep shadows", mood:"大片陰影，懸疑黑色電影"},
+    {zh:"霓虹燈", en:"neon lights, reflections on wet street", mood:"城市夜晚、賽博龐克"},
+    {zh:"體積光", en:"volumetric light rays", mood:"光束穿過灰塵或窗戶，像神聖時刻"},
+    {zh:"恐怖底光", en:"harsh underlighting from below", mood:"從下往上打光，瞬間變恐怖片"}
+  ]}
+};
+const KEYS = ["shot","move","light"];
+const TOPICS = [
+  {zh:"便利商店店員在深夜補貨", en:"a convenience store clerk restocking shelves late at night"},
+  {zh:"捷運車廂裡睡著的學生", en:"a student asleep on a metro train"},
+  {zh:"雨天在公車站等車", en:"someone waiting at a bus stop in the rain"},
+  {zh:"早餐店老闆煎蛋", en:"a breakfast shop owner frying an egg"},
+  {zh:"夜市裡排隊買雞排", en:"people queuing for fried chicken at a night market"},
+  {zh:"找不到遙控器的爸爸", en:"a dad searching everywhere for the TV remote"},
+  {zh:"鬧鐘響了還在賴床", en:"someone hiding under the blanket as the alarm rings"},
+  {zh:"排隊買手搖飲", en:"a long line at a bubble tea shop"},
+  {zh:"頂樓曬衣服", en:"hanging laundry on a rooftop"},
+  {zh:"一隻貓盯著窗外", en:"a cat staring out of a window"},
+  {zh:"外送員穿越車陣", en:"a food delivery rider weaving through traffic"},
+  {zh:"空蕩蕩的籃球場投最後一球", en:"a lone player taking the last shot on an empty basketball court"},
+  {zh:"圖書館裡偷吃零食", en:"someone secretly eating snacks in a library"},
+  {zh:"打開冰箱發現布丁不見了", en:"opening the fridge and discovering the pudding is gone"},
+  {zh:"洗衣店裡等烘衣服", en:"waiting alone in a laundromat at night"}
+];
+const STYLE = "cinematic, shot on 35mm film, shallow depth of field, film grain, anamorphic 2.39:1";
+
+const state = { cur:{shot:null,move:null,light:null}, locked:{shot:false,move:false,light:false},
+  used:{shot:new Set(),move:new Set(),light:new Set()}, topicEn:"", history:[], spinning:false };
+
+const $ = s => document.querySelector(s);
+const slotsEl = $("#slots");
+
+function buildSlots(){
+  slotsEl.innerHTML = KEYS.map((k,i)=>`
+    <div class="slot" data-k="${k}" id="slot-${k}">
+      <div class="slot-head">
+        <span class="tag">${DECKS[k].label}<small>${DECKS[k].en}</small></span>
+        <button class="lock" type="button" aria-pressed="false" data-k="${k}" title="快捷鍵 ${i+1}">鎖定</button>
+      </div>
+      <div class="face">
+        <div class="zh">？</div>
+        <div class="en">&nbsp;</div>
+        <div class="mood">等待抽卡</div>
+      </div>
+      <div class="left" id="left-${k}"></div>
+    </div>`).join("");
+  slotsEl.querySelectorAll(".lock").forEach(b=>b.addEventListener("click",()=>toggleLock(b.dataset.k)));
+  updateLeft();
+}
+function toggleLock(k){
+  state.locked[k] = !state.locked[k];
+  const b = slotsEl.querySelector(`.lock[data-k=${k}]`);
+  b.setAttribute("aria-pressed", state.locked[k]);
+  b.textContent = state.locked[k] ? "已鎖定" : "鎖定";
+}
+function paint(k, idx){
+  const c = DECKS[k].cards[idx], f = $(`#slot-${k} .face`);
+  f.querySelector(".zh").textContent = c.zh;
+  f.querySelector(".en").textContent = c.en;
+  f.querySelector(".mood").textContent = c.mood;
+}
+function updateLeft(){
+  KEYS.forEach(k=>{
+    const left = DECKS[k].cards.length - state.used[k].size;
+    $(`#left-${k}`).textContent = $("#noRepeat").checked ? `牌庫剩 ${left} / 8 張` : "可重複抽";
+  });
+  renderDeck();
+}
+function pick(k){
+  const n = DECKS[k].cards.length;
+  let pool = [...Array(n).keys()];
+  if($("#noRepeat").checked){
+    pool = pool.filter(i=>!state.used[k].has(i));
+    if(pool.length===0){ state.used[k].clear(); pool=[...Array(n).keys()]; }
+  }
+  if(pool.length>1 && state.cur[k]!==null) pool = pool.filter(i=>i!==state.cur[k]);
+  return pool[Math.floor(Math.random()*pool.length)];
+}
+function draw(){
+  if(state.spinning) return;
+  const targets = KEYS.filter(k=>!state.locked[k] || state.cur[k]===null);
+  if(targets.length===0){ flash("三張都鎖住了，先解鎖一張吧"); return; }
+  state.spinning = true; $("#draw").disabled = true;
+  let done = 0;
+  targets.forEach((k,i)=>{
+    const el = $(`#slot-${k}`); el.classList.remove("landed"); el.classList.add("spinning");
+    const n = DECKS[k].cards.length;
+    const t = setInterval(()=>paint(k, Math.floor(Math.random()*n)), 70);
+    setTimeout(()=>{
+      clearInterval(t);
+      const idx = pick(k); state.cur[k]=idx; state.used[k].add(idx);
+      paint(k, idx); el.classList.remove("spinning"); void el.offsetWidth; el.classList.add("landed");
+      if(++done===targets.length){ state.spinning=false; $("#draw").disabled=false; finish(); }
+    }, 800 + i*450);
+  });
+}
+function finish(){ updateLeft(); renderPrompt(true); }
+
+function topicText(){
+  const v = $("#topic").value.trim();
+  if(!v) return {zh:"（自己決定主題）", en:"[your subject]"};
+  return {zh:v, en: state.topicEn && v===state.topicZh ? state.topicEn : v};
+}
+function buildEn(){
+  const t = topicText(), c = KEYS.map(k=>DECKS[k].cards[state.cur[k]]);
+  let s = `${c[0].en} of ${t.en}, ${c[1].en}, ${c[2].en}`;
+  if($("#style").checked) s += `, ${STYLE}`;
+  return s;
+}
+function renderPrompt(addHistory){
+  if(KEYS.some(k=>state.cur[k]===null)) return;
+  const t = topicText(), c = KEYS.map(k=>DECKS[k].cards[state.cur[k]]);
+  $("#promptZh").innerHTML =
+    `用 <b style="background:var(--shot)">${c[0].zh}</b> ＋ <b style="background:var(--move)">${c[1].zh}</b> ＋ <b style="background:var(--light)">${c[2].zh}</b> 拍「${escapeHtml(t.zh)}」`;
+  $("#promptEn").textContent = buildEn();
+  if(addHistory){
+    state.history.unshift({t:t.zh, c:c.map(x=>x.zh)});
+    state.history = state.history.slice(0,12);
+    renderHistory();
+  }
+}
+function renderHistory(){
+  const h = $("#history");
+  if(!state.history.length){ h.innerHTML='<li class="empty">還沒有紀錄</li>'; return; }
+  const total = state.history.length;
+  h.innerHTML = state.history.map((x,i)=>`<li><span class="n">#${total-i}</span>
+    <span class="chip shot">${x.c[0]}</span><span class="chip move">${x.c[1]}</span><span class="chip light">${x.c[2]}</span>
+    <span>${escapeHtml(x.t)}</span></li>`).join("");
+}
+function renderDeck(){
+  $("#deckView").innerHTML = KEYS.map(k=>`
+    <div class="deck-group" style="--c:var(--${k})">
+      <h3 style="color:var(--${k})">${DECKS[k].label}　${DECKS[k].en}</h3>
+      <div class="mini-grid">${DECKS[k].cards.map((c,i)=>`
+        <div class="mini ${$("#noRepeat").checked && state.used[k].has(i)?"used":""}">
+          <b>${c.zh}</b><span>${c.en}</span><p>${c.mood}</p></div>`).join("")}
+      </div></div>`).join("");
+}
+function escapeHtml(s){return s.replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
+function flash(msg){ const t=$("#toast"); t.textContent=msg; t.classList.add("show"); setTimeout(()=>t.classList.remove("show"),1600); }
+
+async function copy(){
+  if(KEYS.some(k=>state.cur[k]===null)){ flash("先抽卡再複製"); return; }
+  const text = buildEn();
+  try{ await navigator.clipboard.writeText(text); }
+  catch(e){
+    const ta=document.createElement("textarea"); ta.value=text; document.body.appendChild(ta);
+    ta.select(); try{document.execCommand("copy")}catch(_){} ta.remove();
+  }
+  flash("已複製！");
+}
+
+$("#draw").addEventListener("click", draw);
+$("#copy").addEventListener("click", copy);
+$("#style").addEventListener("change", ()=>renderPrompt(false));
+$("#noRepeat").addEventListener("change", updateLeft);
+$("#topic").addEventListener("input", ()=>renderPrompt(false));
+$("#reset").addEventListener("click", ()=>{ KEYS.forEach(k=>state.used[k].clear()); updateLeft(); flash("已重新洗牌"); });
+$("#randTopic").addEventListener("click", ()=>{
+  const t = TOPICS[Math.floor(Math.random()*TOPICS.length)];
+  $("#topic").value = t.zh; state.topicZh = t.zh; state.topicEn = t.en; renderPrompt(false);
+});
+document.addEventListener("keydown", e=>{
+  if(e.target.tagName==="INPUT") return;
+  if(e.code==="Space"){ e.preventDefault(); draw(); }
+  if(["Digit1","Digit2","Digit3"].includes(e.code)) toggleLock(KEYS[+e.code.slice(-1)-1]);
+});
+buildSlots(); renderDeck();
+</script>
+</body>
+</html>
